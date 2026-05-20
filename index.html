@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+<!-- PWA -->
+<link rel="manifest" href="/manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Pasta">
+<link rel="apple-touch-icon" href="icon-512.png">
+<meta name="theme-color" content="#0e0900">
+
+<title>La Pasta</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500&display=swap');
+
+:root {
+  --bg:#0e0900; --surface:#1c1208; --surface2:#251a0d; --surface3:#2f2010;
+  --tc:#c8542a; --tc2:#e06840; --cream:#f5e6c8; --gold:#d4a843; --gold2:#f0c060;
+  --text:#f0ddb8; --text2:#a08060; --danger:#e04040; --radius:18px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;min-height:-webkit-fill-available;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");pointer-events:none;z-index:9999;opacity:.45}
+
+.app-header{position:sticky;top:0;z-index:100;background:rgba(14,9,0,.94);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(212,168,67,.15);padding:env(safe-area-inset-top,44px) 0 0}
+.app-title{font-family:'Playfair Display',serif;font-size:22px;color:var(--gold);text-align:center;padding:14px 20px 10px;letter-spacing:.5px}
+.app-title span{font-style:italic;color:var(--tc2)}
+.tabs{display:flex;padding:0 16px 12px;gap:8px}
+.tab{flex:1;padding:9px 4px;background:var(--surface);border:1px solid rgba(212,168,67,.12);border-radius:10px;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:3px}
+.tab .ti{font-size:18px}
+.tab.active{background:var(--tc);border-color:var(--tc2);color:var(--cream)}
+
+.view{display:none;padding:16px;padding-bottom:calc(env(safe-area-inset-bottom,20px) + 20px)}
+.view.active{display:block}
+
+.card{background:var(--surface);border:1px solid rgba(212,168,67,.1);border-radius:var(--radius);padding:18px;margin-bottom:14px}
+.card-title{font-family:'Playfair Display',serif;font-size:16px;color:var(--gold);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.card-title.sb{justify-content:space-between}
+
+.guest-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);transition:opacity .3s}
+.guest-row:last-child{border-bottom:none}
+.guest-row.off{opacity:.35}
+.gdot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.gname{flex:1;font-size:16px;color:var(--text)}
+.gname-inp{flex:1;background:none;border:none;outline:none;font-family:'DM Sans',sans-serif;font-size:16px;color:var(--text);padding:2px 0;min-width:0}
+.gname-inp::placeholder{color:var(--text2)}
+
+.wi-wrap{position:relative;width:88px;flex-shrink:0}
+.wi{width:100%;background:var(--surface2);border:1.5px solid rgba(212,168,67,.18);border-radius:10px;padding:8px 26px 8px 8px;font-family:'DM Sans',sans-serif;font-size:16px;font-weight:500;color:var(--cream);text-align:right;-webkit-appearance:none;outline:none;transition:border-color .2s}
+.wi:focus{border-color:var(--gold)}
+.wi:disabled{opacity:.28;pointer-events:none}
+.wu{position:absolute;right:7px;top:50%;transform:translateY(-50%);font-size:11px;color:var(--text2);pointer-events:none}
+
+.tbtn{width:32px;height:32px;border-radius:50%;background:var(--surface3);border:1px solid rgba(255,255,255,.1);color:var(--text2);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.tbtn.on{background:var(--tc);border-color:var(--tc2);color:#fff}
+.tbtn.rm{background:rgba(224,64,64,.15);border-color:rgba(224,64,64,.3);color:var(--danger)}
+.add-guest-btn{display:flex;align-items:center;gap:8px;background:none;border:1.5px dashed rgba(212,168,67,.25);border-radius:12px;padding:10px 14px;color:var(--gold);font-family:'DM Sans',sans-serif;font-size:14px;cursor:pointer;width:100%;margin-top:10px;transition:all .2s}
+
+.big-wrap{display:flex;align-items:center;gap:12px;background:var(--surface2);border:2px solid rgba(200,84,42,.35);border-radius:14px;padding:14px 16px}
+.big-wrap .lbl{flex:1;font-size:14px;color:var(--text2);line-height:1.3}
+.big-wrap .lbl strong{display:block;color:var(--text);font-size:16px}
+.big-inp{width:110px;background:none;border:none;outline:none;font-family:'Playfair Display',serif;font-size:28px;font-weight:700;color:var(--tc2);text-align:right;-webkit-appearance:none}
+.big-unit{font-size:14px;color:var(--text2)}
+
+.totals-row{display:flex;gap:8px;margin-top:10px}
+.chip{flex:1;background:var(--surface2);border-radius:12px;padding:10px 12px;text-align:center}
+.chip .cl{font-size:11px;color:var(--text2);margin-bottom:3px}
+.chip .cv{font-size:17px;font-weight:600;color:var(--cream)}
+.chip .cv.hi{color:var(--gold)}
+
+.pie-container{display:flex;flex-direction:column;align-items:center;padding:6px 0 4px}
+#pieCanvas{max-width:260px;width:100%}
+.legend{width:100%;margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.li{display:flex;align-items:center;gap:8px;background:var(--surface2);border-radius:10px;padding:9px 10px}
+.ldot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.lname{font-size:12px;color:var(--text2)}
+.lweight{font-size:17px;font-weight:600;color:var(--cream)}
+.lpct{font-size:11px;color:var(--text2);margin-top:1px}
+
+.out-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+.out-row:last-child{border-bottom:none}
+.out-name{flex:1;font-size:16px;color:var(--text)}
+.out-val{font-family:'Playfair Display',serif;font-size:22px;font-weight:700;color:var(--gold2)}
+.out-g{font-size:12px;color:var(--text2)}
+.out-pct{font-size:12px;color:var(--tc2);font-weight:500;min-width:38px;text-align:right}
+
+.pasta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pasta-card{background:var(--surface2);border:1.5px solid rgba(212,168,67,.08);border-radius:14px;padding:12px;cursor:pointer;transition:all .2s}
+.pasta-card.sel{border-color:var(--tc);background:rgba(200,84,42,.14)}
+.pasta-card .pname{font-size:13px;font-weight:500;color:var(--text)}
+.pasta-card .ptime{font-size:11px;color:var(--text2);margin-top:3px}
+.pasta-card .pemoji{font-size:22px;margin-bottom:4px}
+
+.timer-display{text-align:center;padding:16px 0 8px}
+.trw{position:relative;display:inline-block}
+#timerCanvas{display:block}
+.ttime{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'Playfair Display',serif;font-size:44px;font-weight:700;color:var(--cream);pointer-events:none;white-space:nowrap}
+.tlabel{position:absolute;bottom:22%;left:50%;transform:translateX(-50%);font-size:11px;color:var(--text2);pointer-events:none;white-space:nowrap}
+.timer-btns{display:flex;gap:10px;margin-top:12px;padding:0 8px}
+.btn-p{flex:1;padding:14px;background:var(--tc);border:none;border-radius:14px;color:#fff;font-family:'DM Sans',sans-serif;font-size:16px;font-weight:500;cursor:pointer;transition:all .2s}
+.btn-p:active{transform:scale(.97)}
+.btn-p.danger{background:var(--danger)}
+.btn-p.sec{background:var(--surface3);color:var(--text2);flex:0 0 auto;padding:14px 20px}
+.abanner{text-align:center;padding:10px;border-radius:12px;font-size:14px;font-weight:500;margin-top:10px;display:none}
+.abanner.warn{background:rgba(212,168,67,.15);color:var(--gold2);display:block}
+.abanner.done{background:rgba(224,64,64,.15);color:#ff7070;display:block}
+
+.pot-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.pot-item{background:var(--surface2);border:1.5px solid rgba(212,168,67,.08);border-radius:14px;padding:12px 8px;text-align:center;cursor:pointer;transition:all .2s;position:relative;overflow:hidden}
+.pot-item.sel{border-color:var(--gold);background:rgba(212,168,67,.1)}
+.pot-item svg{width:48px;height:48px;margin:0 auto 4px;display:block}
+.pot-item img.ppic{width:52px;height:52px;border-radius:10px;object-fit:cover;margin:0 auto 4px;display:block}
+.pot-item .pname{font-size:12px;color:var(--text);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pot-item .pw{font-size:11px;color:var(--text2);margin-top:2px}
+.pot-del{position:absolute;top:5px;right:5px;font-size:10px;color:var(--danger);background:rgba(224,64,64,.2);border-radius:50%;width:18px;height:18px;display:none;align-items:center;justify-content:center;cursor:pointer;font-weight:700}
+.pot-item.emode .pot-del{display:flex}
+
+.picon-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:10px 0}
+.picon-opt{background:var(--surface2);border:1.5px solid transparent;border-radius:10px;padding:6px;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center}
+.picon-opt svg{width:36px;height:36px}
+.picon-opt.sel{border-color:var(--gold);background:rgba(212,168,67,.12)}
+
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(10px);z-index:200;align-items:flex-end;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-top:1px solid rgba(212,168,67,.2);border-radius:24px 24px 0 0;padding:20px 20px calc(env(safe-area-inset-bottom,20px)+20px);width:100%;max-height:82vh;overflow-y:auto;animation:slideUp .28s ease}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-title{font-family:'Playfair Display',serif;font-size:20px;color:var(--gold);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.mclose{font-size:26px;cursor:pointer;color:var(--text2);line-height:1}
+
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.field input{width:100%;background:var(--surface2);border:1.5px solid rgba(212,168,67,.15);border-radius:10px;padding:11px 13px;font-family:'DM Sans',sans-serif;font-size:15px;color:var(--text);outline:none;-webkit-appearance:none;transition:border-color .2s}
+.field input:focus{border-color:var(--gold)}
+.photo-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--surface2);border:1.5px dashed rgba(212,168,67,.25);border-radius:10px;padding:12px;color:var(--gold);font-size:14px;cursor:pointer;transition:all .2s;width:100%;font-family:'DM Sans',sans-serif}
+.slabel{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;margin-top:14px}
+.err-msg{color:var(--danger);font-size:13px;padding:8px 0;display:none}
+.etbtn{background:none;border:none;color:var(--text2);font-size:12px;cursor:pointer;text-decoration:underline;font-family:'DM Sans',sans-serif}
+input[type=number]::-webkit-inner-spin-button,input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+.pulsing{animation:pulse 1.4s ease infinite}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="app-title">La <span>Pasta</span></div>
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('calc')"><span class="ti">⚖️</span>Pesi</button>
+    <button class="tab" onclick="switchTab('pasta')"><span class="ti">🍝</span>Pasta</button>
+    <button class="tab" onclick="switchTab('pots')"><span class="ti">🫕</span>Pentola</button>
+  </div>
+</div>
+
+<!-- TAB 1 -->
+<div id="view-calc" class="view active">
+  <div class="card">
+    <div class="card-title"><span>🫕</span> Pentola</div>
+    <div class="guest-row">
+      <div class="gname" style="color:var(--text2)">Tara pentola</div>
+      <div class="wi-wrap">
+        <input type="number" class="wi" id="pentola-input" placeholder="0" min="0" oninput="recalc()" inputmode="decimal">
+        <span class="wu">g</span>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--text2);margin-top:8px;text-align:right">
+      <button class="etbtn" onclick="switchTab('pots')">Seleziona pentola →</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title sb">
+      <span><span>👥</span> Ospiti — Crudo</span>
+      <span style="font-size:12px;color:var(--text2)" id="total-crudo-lbl">0 g</span>
+    </div>
+    <div id="guests-list"></div>
+    <button class="add-guest-btn" onclick="addGuest()"><span>＋</span> Aggiungi ospite</button>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span>🍳</span> Dopo cottura</div>
+    <div class="big-wrap">
+      <div class="lbl"><strong>Peso totale cotto</strong>pasta + pentola</div>
+      <input type="number" class="big-inp" id="cotto-totale" placeholder="0" min="0" oninput="recalc()" inputmode="decimal">
+      <span class="big-unit">g</span>
+    </div>
+    <div class="totals-row">
+      <div class="chip"><div class="cl">Crudo tot.</div><div class="cv" id="chip-crudo">—</div></div>
+      <div class="chip"><div class="cl">Cotto netto</div><div class="cv hi" id="chip-cotto">—</div></div>
+      <div class="chip"><div class="cl">Fattore</div><div class="cv" id="chip-factor">—</div></div>
+    </div>
+  </div>
+
+  <div class="card" id="out-card" style="display:none">
+    <div class="card-title"><span>🍽</span> Porzioni cotte</div>
+    <div id="out-list"></div>
+  </div>
+
+  <div class="card" id="pie-card" style="display:none">
+    <div class="card-title"><span>📊</span> Distribuzione</div>
+    <div class="pie-container">
+      <canvas id="pieCanvas" width="260" height="260"></canvas>
+      <div class="legend" id="legend"></div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 2 -->
+<div id="view-pasta" class="view">
+  <div class="card">
+    <div class="card-title"><span>🍝</span> Tipo di pasta</div>
+    <div class="pasta-grid" id="pasta-grid"></div>
+  </div>
+  <div class="card" id="timer-card" style="display:none">
+    <div class="card-title" id="timer-pasta-name">Timer</div>
+    <div class="timer-display">
+      <div class="trw">
+        <canvas id="timerCanvas" width="220" height="220"></canvas>
+        <div class="ttime" id="timer-time">--:--</div>
+        <div class="tlabel" id="timer-label">pronto a partire</div>
+      </div>
+    </div>
+    <div id="alert-banner" class="abanner"></div>
+    <div class="timer-btns" id="timer-btns"></div>
+  </div>
+</div>
+
+<!-- TAB 3 -->
+<div id="view-pots" class="view">
+  <div class="card">
+    <div class="card-title sb">
+      <span><span>🫕</span> Le tue pentole</span>
+      <button class="etbtn" id="edit-pots-btn" onclick="toggleEditPots()">Modifica</button>
+    </div>
+    <div class="pot-grid" id="pots-grid"></div>
+    <button class="btn-p" onclick="openAddPot()">＋ Nuova pentola</button>
+  </div>
+</div>
+
+<!-- ADD POT MODAL -->
+<div class="modal-overlay" id="add-pot-modal">
+  <div class="modal">
+    <div class="modal-title">Nuova Pentola <span class="mclose" onclick="closeAddPot()">×</span></div>
+    <div class="field"><label>Nome</label><input type="text" id="pot-name-input" placeholder="es. Pentolone grande"></div>
+    <div class="field"><label>Peso tara (g)</label><input type="number" id="pot-weight-input" placeholder="es. 1250" min="0" inputmode="decimal"></div>
+    <div id="pot-err" class="err-msg"></div>
+    <div class="slabel">Icona</div>
+    <div class="picon-grid" id="pot-icons-grid"></div>
+    <div class="slabel">Oppure usa una foto</div>
+    <label class="photo-btn">📷 Scatta o scegli dalla libreria
+      <input type="file" accept="image/*" capture="environment" id="pot-photo-input" style="display:none" onchange="handlePotPhoto(this)">
+    </label>
+    <img id="pot-photo-preview" style="display:none;width:72px;height:72px;border-radius:12px;object-fit:cover;margin-top:10px">
+    <button class="btn-p" style="margin-top:18px" onclick="savePot()">Salva pentola</button>
+  </div>
+</div>
+
+<script>
+const PALETTE=['#c8542a','#d4a843','#6a9a5a','#5a7aaa','#a06ab0','#d46a6a','#6aada0','#b08050','#7a8aaa','#c87a50'];
+const PASTA_LIST=[
+  {name:'Spaghetti n°3',emoji:'🍝',minutes:7},{name:'Spaghetti n°5',emoji:'🍝',minutes:9},
+  {name:'Spaghetti n°12',emoji:'🍝',minutes:12},{name:'Tortiglioni',emoji:'🍝',minutes:11},
+  {name:'Fusilli',emoji:'🌀',minutes:10},{name:'Mezze Penne',emoji:'🍝',minutes:9},
+  {name:'Penne Rigate',emoji:'🍝',minutes:11},{name:'Pappardelle',emoji:'🍜',minutes:6},
+  {name:'Tagliatelle',emoji:'🍜',minutes:5},{name:'Tagliolini',emoji:'🍜',minutes:3},
+  {name:'Riso Vialone',emoji:'🍚',minutes:18},{name:'Gnocchi',emoji:'🥟',minutes:3},
+  {name:'Tortellini',emoji:'🥟',minutes:5},{name:'Rigatoni',emoji:'🍝',minutes:12},
+];
+const POT_SVGS=[
+  `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="14" width="32" height="26" rx="4" fill="#8B6050" stroke="#C8A080" stroke-width="1.5"/><rect x="8" y="14" width="32" height="6" rx="2" fill="#A07060" stroke="#C8A080" stroke-width="1.5"/><rect x="3" y="16" width="5" height="5" rx="2" fill="#C8A080"/><rect x="40" y="16" width="5" height="5" rx="2" fill="#C8A080"/><rect x="18" y="10" width="12" height="5" rx="2" fill="#C8A080" stroke="#D4B090" stroke-width="1"/><line x1="14" y1="26" x2="34" y2="26" stroke="#C8A080" stroke-width="1" stroke-dasharray="3 3" opacity=".4"/></svg>`,
+  `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="22" cy="30" rx="16" ry="10" fill="#7A5540" stroke="#C8A080" stroke-width="1.5"/><ellipse cx="22" cy="22" rx="16" ry="5" fill="#9A7060" stroke="#C8A080" stroke-width="1.5"/><rect x="36" y="20" width="10" height="4" rx="2" fill="#C8A080" stroke="#D4B090" stroke-width="1"/><ellipse cx="22" cy="22" rx="9" ry="2.5" fill="#B08070" opacity=".5"/></svg>`,
+  `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="18" width="26" height="20" rx="5" fill="#8B6050" stroke="#C8A080" stroke-width="1.5"/><rect x="10" y="18" width="26" height="6" rx="3" fill="#A07060" stroke="#C8A080" stroke-width="1.5"/><rect x="34" y="19" width="9" height="4" rx="2" fill="#C8A080"/><rect x="17" y="13" width="14" height="6" rx="2" fill="#C8A080" stroke="#D4B090" stroke-width="1"/></svg>`,
+  `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 20 Q24 44 42 20" fill="#7A5540" stroke="#C8A080" stroke-width="1.5"/><path d="M6 20 Q24 30 42 20" fill="#9A7060" stroke="#C8A080" stroke-width="1.5"/><rect x="1" y="18" width="7" height="4" rx="2" fill="#C8A080"/><rect x="40" y="18" width="7" height="4" rx="2" fill="#C8A080"/><ellipse cx="24" cy="20" rx="10" ry="2.5" fill="#B08070" opacity=".45"/></svg>`,
+  `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="7" y="20" width="34" height="20" rx="5" fill="#8B6050" stroke="#C8A080" stroke-width="1.5"/><path d="M7 20 Q7 14 24 14 Q41 14 41 20 Z" fill="#A07060" stroke="#C8A080" stroke-width="1.5"/><circle cx="24" cy="12" r="3" fill="#C8A080" stroke="#D4B090" stroke-width="1"/><rect x="3" y="22" width="5" height="5" rx="2" fill="#C8A080"/><rect x="40" y="22" width="5" height="5" rx="2" fill="#C8A080"/></svg>`,
+  `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="16" width="32" height="24" rx="6" fill="#6A7A6A" stroke="#9AB09A" stroke-width="1.5"/><rect x="8" y="16" width="32" height="7" rx="4" fill="#8A9A8A" stroke="#9AB09A" stroke-width="1.5"/><circle cx="24" cy="12" r="3" fill="#9AB09A" stroke="#BDD0BD" stroke-width="1"/><rect x="3" y="18" width="5" height="5" rx="2" fill="#9AB09A"/><rect x="40" y="18" width="5" height="5" rx="2" fill="#9AB09A"/><circle cx="35" cy="13" r="2" fill="#BDD0BD"/></svg>`,
+  `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="14" y="20" width="20" height="18" rx="4" fill="#8B6050" stroke="#C8A080" stroke-width="1.5"/><rect x="14" y="20" width="20" height="5" rx="2.5" fill="#A07060" stroke="#C8A080" stroke-width="1.5"/><rect x="32" y="21" width="9" height="3.5" rx="1.75" fill="#C8A080"/><path d="M20 17 Q24 13 28 17" stroke="#C8A080" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>`,
+  `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="9" y="13" width="30" height="28" rx="4" fill="#8B6050" stroke="#C8A080" stroke-width="1.5"/><rect x="7" y="12" width="34" height="7" rx="3" fill="#A07060" stroke="#C8A080" stroke-width="1.5"/><rect x="18" y="8" width="12" height="5" rx="2" fill="#C8A080" stroke="#D4B090" stroke-width="1"/><circle cx="20" cy="15.5" r="1" fill="#D4B090"/><circle cx="24" cy="15.5" r="1" fill="#D4B090"/><circle cx="28" cy="15.5" r="1" fill="#D4B090"/><rect x="4" y="14" width="5" height="5" rx="2" fill="#C8A080"/><rect x="39" y="14" width="5" height="5" rx="2" fill="#C8A080"/></svg>`,
+  `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="21" cy="28" r="14" fill="#7A5540" stroke="#C8A080" stroke-width="1.5"/><circle cx="21" cy="28" r="9" fill="#9A6A50" opacity=".6"/><rect x="33" y="26" width="13" height="4" rx="2" fill="#C8A080" stroke="#D4B090" stroke-width="1"/></svg>`,
+  `<svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 22 Q6 40 24 40 Q42 40 42 22 Z" fill="#8B6050" stroke="#C8A080" stroke-width="1.5"/><ellipse cx="24" cy="22" rx="18" ry="5" fill="#A07060" stroke="#C8A080" stroke-width="1.5"/><ellipse cx="24" cy="22" rx="10" ry="2.5" fill="#C8A080" opacity=".35"/></svg>`,
+];
+
+let guests=[],pots=[],selectedPotIdx=null,selectedPasta=null,editingPots=false,potPhotoDataUrl=null,selectedPotIconIdx=0;
+let timerInterval=null,timerTotal=0,timerRemaining=0,timerRunning=false,warningFired=false,doneFired=false;
+let rafId=null,pieSlices=[];
+
+function init(){
+  try{
+    const sp=localStorage.getItem('pasta_pots');
+    const sg=localStorage.getItem('pasta_guests');
+    const si=localStorage.getItem('pasta_pot_sel');
+    if(sp) pots=JSON.parse(sp);
+    if(si!==null) selectedPotIdx=parseInt(si);
+    if(sg){ guests=JSON.parse(sg); }
+    else { ['Edi','Renzo','Marika','Andrea'].forEach((n,i)=>guests.push({id:Date.now()+i,name:n,crudo:'',active:true,preset:true})); }
+  }catch(e){ ['Edi','Renzo','Marika','Andrea'].forEach((n,i)=>guests.push({id:Date.now()+i,name:n,crudo:'',active:true,preset:true})); }
+  renderGuests(); renderPastaGrid(); renderPotsGrid(); renderPotIcons(); recalc();
+  if(selectedPotIdx!==null&&pots[selectedPotIdx]) document.getElementById('pentola-input').value=pots[selectedPotIdx].weight;
+  document.getElementById('add-pot-modal').addEventListener('click',function(e){if(e.target===this)closeAddPot();});
+  if('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
+}
+
+function switchTab(t){
+  ['calc','pasta','pots'].forEach((name,i)=>{
+    document.querySelectorAll('.tab')[i].classList.toggle('active',name===t);
+    document.getElementById('view-'+name).classList.toggle('active',name===t);
+  });
+}
+
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+function renderGuests(){
+  const list=document.getElementById('guests-list');
+  list.innerHTML='';
+  guests.forEach((g,i)=>{
+    const color=PALETTE[i%PALETTE.length];
+    const row=document.createElement('div');
+    row.className='guest-row'+(g.active?'':' off');
+    row.innerHTML=`
+      <div class="gdot" style="background:${color}"></div>
+      ${g.preset
+        ?`<div class="gname">${escHtml(g.name)}</div>`
+        :`<input class="gname-inp" data-id="${g.id}" value="${escHtml(g.name)}" oninput="updateName(this)" placeholder="Nome" type="text">`
+      }
+      <div class="wi-wrap">
+        <input type="number" class="wi" data-id="${g.id}" value="${g.crudo}"
+          oninput="updateCrudo(this)" ${g.active?'':'disabled'} placeholder="0" min="0" inputmode="decimal">
+        <span class="wu">g</span>
+      </div>
+      <button class="tbtn ${g.active?'on':''}" onclick="toggleGuest('${g.id}')">${g.active?'✓':'○'}</button>
+      ${!g.preset?`<button class="tbtn rm" onclick="removeGuest('${g.id}')">✕</button>`:''}
+    `;
+    list.appendChild(row);
+  });
+  saveGuests();
+}
+
+function updateName(el){const id=parseInt(el.dataset.id);const g=guests.find(x=>x.id===id);if(g){g.name=el.value;saveGuests();}}
+function updateCrudo(el){const id=parseInt(el.dataset.id);const g=guests.find(x=>x.id===id);if(g){g.crudo=el.value;saveGuests();recalc();}}
+function toggleGuest(id){id=parseInt(id);const g=guests.find(x=>x.id===id);if(g)g.active=!g.active;renderGuests();recalc();}
+function removeGuest(id){id=parseInt(id);guests=guests.filter(x=>x.id!==id);renderGuests();recalc();}
+function addGuest(){
+  guests.push({id:Date.now(),name:'',crudo:'',active:true,preset:false});
+  renderGuests();
+  setTimeout(()=>{const ins=document.querySelectorAll('.gname-inp');if(ins.length)ins[ins.length-1].focus();},50);
+}
+function saveGuests(){try{localStorage.setItem('pasta_guests',JSON.stringify(guests));}catch(e){}}
+
+function recalc(){
+  const pentola=parseFloat(document.getElementById('pentola-input').value)||0;
+  const cottoPot=parseFloat(document.getElementById('cotto-totale').value)||0;
+  const active=guests.filter(g=>g.active);
+  const totalCrudo=active.reduce((s,g)=>s+(parseFloat(g.crudo)||0),0);
+  document.getElementById('total-crudo-lbl').textContent=totalCrudo+'g';
+  document.getElementById('chip-crudo').textContent=totalCrudo?totalCrudo+'g':'—';
+  const cottoNetto=Math.max(0,cottoPot-pentola);
+  const factor=totalCrudo>0?cottoNetto/totalCrudo:0;
+  document.getElementById('chip-cotto').textContent=cottoNetto>0?cottoNetto+'g':'—';
+  document.getElementById('chip-factor').textContent=factor>0?'×'+factor.toFixed(2):'—';
+  const results=active.map((g,i)=>{
+    const crudo=parseFloat(g.crudo)||0;
+    const pct=totalCrudo>0?(crudo/totalCrudo)*100:0;
+    const cotto=(totalCrudo>0&&cottoNetto>0)?Math.round((crudo/totalCrudo)*cottoNetto):0;
+    return{name:g.name||'—',crudo,cotto,pct:pct.toFixed(1),color:PALETTE[i%PALETTE.length]};
+  });
+  const outCard=document.getElementById('out-card');
+  const hasCotto=cottoNetto>0&&totalCrudo>0;
+  outCard.style.display=hasCotto?'block':'none';
+  if(hasCotto){
+    const ol=document.getElementById('out-list');ol.innerHTML='';
+    results.forEach(r=>{
+      const row=document.createElement('div');row.className='out-row';
+      row.innerHTML=`<div class="gdot" style="background:${r.color}"></div><div class="out-name">${escHtml(r.name)}</div><div style="text-align:right"><span class="out-val">${r.cotto}</span><span class="out-g"> g</span><br><span class="out-pct">${r.pct}%</span></div>`;
+      ol.appendChild(row);
+    });
+  }
+  updatePie(results,cottoNetto);
+}
+
+function updatePie(results,cottoNetto){
+  const hasCrudo=results.some(r=>r.crudo>0);
+  document.getElementById('pie-card').style.display=hasCrudo?'block':'none';
+  if(!hasCrudo)return;
+  const leg=document.getElementById('legend');leg.innerHTML='';
+  results.forEach(r=>{
+    if(!r.crudo)return;
+    const item=document.createElement('div');item.className='li';
+    const sc=cottoNetto>0&&r.cotto>0;
+    item.innerHTML=`<div class="ldot" style="background:${r.color}"></div><div style="flex:1;min-width:0"><div class="lname">${escHtml(r.name)}</div><div class="lweight">${sc?r.cotto+'g':r.crudo+'g'}<span style="font-size:11px;color:var(--text2)"> ${sc?'cotto':'crudo'}</span></div><div class="lpct">${r.pct}%</div></div>`;
+    leg.appendChild(item);
+  });
+  const valid=results.filter(r=>r.crudo>0);
+  if(pieSlices.length!==valid.length){
+    pieSlices=valid.map(r=>({target:parseFloat(r.pct)/100,current:0,color:r.color,name:r.name,cotto:r.cotto,crudo:r.crudo,pct:r.pct}));
+  } else {
+    valid.forEach((r,i)=>{pieSlices[i].target=parseFloat(r.pct)/100;pieSlices[i].color=r.color;pieSlices[i].name=r.name;pieSlices[i].cotto=r.cotto;pieSlices[i].crudo=r.crudo;pieSlices[i].pct=r.pct;});
+  }
+  if(rafId)cancelAnimationFrame(rafId);
+  animatePie();
+}
+
+function animatePie(){
+  const canvas=document.getElementById('pieCanvas');if(!canvas)return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.width,H=canvas.height,cx=W/2,cy=H/2,R=W/2-14,IR=R*.50;
+  let moving=false;
+  pieSlices.forEach(s=>{const d=s.target-s.current;if(Math.abs(d)>0.0005){s.current+=d*.14;moving=true;}else s.current=s.target;});
+  ctx.clearRect(0,0,W,H);
+  let angle=-Math.PI/2;
+  pieSlices.forEach(s=>{
+    if(s.current<=0)return;
+    const sweep=s.current*Math.PI*2;
+    ctx.save();ctx.shadowColor=s.color;ctx.shadowBlur=12;
+    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,R,angle,angle+sweep);ctx.closePath();
+    ctx.fillStyle=s.color;ctx.fill();ctx.restore();
+    ctx.save();ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,R,angle,angle+sweep);ctx.closePath();
+    ctx.strokeStyle='#0e0900';ctx.lineWidth=2.5;ctx.stroke();ctx.restore();
+    angle+=sweep;
+  });
+  ctx.beginPath();ctx.arc(cx,cy,IR,0,Math.PI*2);ctx.fillStyle='#161006';ctx.fill();
+  const pentola=parseFloat(document.getElementById('pentola-input').value)||0;
+  const cottoPot=parseFloat(document.getElementById('cotto-totale').value)||0;
+  const cottoNetto=Math.max(0,cottoPot-pentola);
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  if(cottoNetto>0){
+    ctx.fillStyle='#f5e6c8';ctx.font='bold 20px "Playfair Display",serif';ctx.fillText(cottoNetto+'g',cx,cy-9);
+    ctx.fillStyle='#a08060';ctx.font='11px "DM Sans",sans-serif';ctx.fillText('cotto netto',cx,cy+10);
+  } else {
+    const tc=pieSlices.reduce((s,sl)=>s+(sl.crudo||0),0);
+    if(tc>0){ctx.fillStyle='#f5e6c8';ctx.font='bold 20px "Playfair Display",serif';ctx.fillText(tc+'g',cx,cy-9);
+    ctx.fillStyle='#a08060';ctx.font='11px "DM Sans",sans-serif';ctx.fillText('crudo totale',cx,cy+10);}
+  }
+  if(moving)rafId=requestAnimationFrame(animatePie);
+}
+
+function renderPastaGrid(){
+  const grid=document.getElementById('pasta-grid');grid.innerHTML='';
+  PASTA_LIST.forEach((p,i)=>{
+    const c=document.createElement('div');c.className='pasta-card'+(selectedPasta===i?' sel':'');
+    c.innerHTML=`<div class="pemoji">${p.emoji}</div><div class="pname">${p.name}</div><div class="ptime">⏱ ${p.minutes} min</div>`;
+    c.onclick=()=>selectPasta(i);grid.appendChild(c);
+  });
+}
+
+function selectPasta(i){
+  selectedPasta=i;renderPastaGrid();
+  const p=PASTA_LIST[i];
+  document.getElementById('timer-card').style.display='block';
+  document.getElementById('timer-pasta-name').innerHTML=`<span>${p.emoji}</span> ${p.name}`;
+  if(!timerRunning){timerTotal=p.minutes*60;timerRemaining=timerTotal;warningFired=false;doneFired=false;renderTimerDisplay();renderTimerBtns();document.getElementById('alert-banner').className='abanner';document.getElementById('timer-label').textContent='pronto a partire';}
+}
+
+function renderTimerDisplay(){
+  const m=Math.floor(timerRemaining/60),s=timerRemaining%60;
+  document.getElementById('timer-time').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  const cv=document.getElementById('timerCanvas'),ctx=cv.getContext('2d');
+  const W=cv.width,H=cv.height,cx=W/2,cy=H/2,r=W/2-16;
+  ctx.clearRect(0,0,W,H);
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.strokeStyle='rgba(255,255,255,.07)';ctx.lineWidth=10;ctx.stroke();
+  const prog=timerTotal>0?timerRemaining/timerTotal:1;
+  const col=timerRemaining<=60?'#e04040':timerRemaining<=timerTotal*.3?'#d4a843':'#c8542a';
+  ctx.beginPath();ctx.arc(cx,cy,r,-Math.PI/2,-Math.PI/2+(prog*Math.PI*2));
+  ctx.strokeStyle=col;ctx.lineWidth=10;ctx.lineCap='round';ctx.shadowColor=col;ctx.shadowBlur=16;ctx.stroke();ctx.shadowBlur=0;
+  document.getElementById('timer-time').style.color=timerRemaining<=60?'#ff7070':'#f0ddb8';
+}
+
+function renderTimerBtns(){
+  const b=document.getElementById('timer-btns');
+  if(!timerRunning&&timerRemaining===timerTotal) b.innerHTML=`<button class="btn-p" onclick="startTimer()">▶ Inizia cottura</button>`;
+  else if(timerRunning) b.innerHTML=`<button class="btn-p sec" onclick="resetTimer()">↺</button><button class="btn-p danger" onclick="stopTimer()">■ Pausa</button>`;
+  else if(timerRemaining<=0) b.innerHTML=`<button class="btn-p danger" onclick="resetTimer()">✓ Chiudi</button>`;
+  else b.innerHTML=`<button class="btn-p sec" onclick="resetTimer()">↺</button><button class="btn-p" onclick="startTimer()">▶ Riprendi</button>`;
+}
+
+function startTimer(){
+  if(timerRemaining<=0)return;
+  timerRunning=true;document.getElementById('timer-label').textContent='cottura in corso';
+  document.getElementById('timer-time').classList.add('pulsing');renderTimerBtns();
+  timerInterval=setInterval(()=>{
+    timerRemaining--;renderTimerDisplay();
+    if(timerRemaining===60&&!warningFired){warningFired=true;playBeep('warning');const b=document.getElementById('alert-banner');b.textContent='⚠️ Ultimo minuto!';b.className='abanner warn';}
+    if(timerRemaining<=0&&!doneFired){doneFired=true;clearInterval(timerInterval);timerRunning=false;playBeep('done');document.getElementById('timer-label').textContent='pronta!';document.getElementById('timer-time').classList.remove('pulsing');const b=document.getElementById('alert-banner');b.textContent='🍝 La pasta è pronta! Scola subito!';b.className='abanner done';renderTimerBtns();}
+  },1000);
+}
+
+function stopTimer(){clearInterval(timerInterval);timerRunning=false;document.getElementById('timer-time').classList.remove('pulsing');document.getElementById('timer-label').textContent='in pausa';renderTimerBtns();}
+function resetTimer(){clearInterval(timerInterval);timerRunning=false;warningFired=false;doneFired=false;if(selectedPasta!==null)timerRemaining=PASTA_LIST[selectedPasta].minutes*60;document.getElementById('timer-label').textContent='pronto a partire';document.getElementById('timer-time').classList.remove('pulsing');document.getElementById('alert-banner').className='abanner';renderTimerDisplay();renderTimerBtns();}
+
+function playBeep(type){
+  try{
+    const ac=new(window.AudioContext||window.webkitAudioContext)();
+    if(type==='warning'){[0,.35].forEach((d,i)=>{const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.frequency.value=660+i*110;o.type='sine';g.gain.setValueAtTime(0,ac.currentTime+d);g.gain.linearRampToValueAtTime(.3,ac.currentTime+d+.05);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+d+.5);o.start(ac.currentTime+d);o.stop(ac.currentTime+d+.5);});}
+    else{[0,.25,.5].forEach((d,i)=>{const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.frequency.value=[523,659,784][i];o.type='sine';g.gain.setValueAtTime(0,ac.currentTime+d);g.gain.linearRampToValueAtTime(.4,ac.currentTime+d+.05);g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+d+.6);o.start(ac.currentTime+d);o.stop(ac.currentTime+d+.8);});}
+  }catch(e){}
+}
+
+function renderPotsGrid(){
+  const grid=document.getElementById('pots-grid');grid.innerHTML='';
+  if(!pots.length){grid.innerHTML='<div style="color:var(--text2);font-size:13px;grid-column:1/-1;text-align:center;padding:12px 0">Nessuna pentola salvata</div>';return;}
+  pots.forEach((pot,i)=>{
+    const item=document.createElement('div');
+    item.className='pot-item'+(selectedPotIdx===i?' sel':'')+(editingPots?' emode':'');
+    item.innerHTML=`${pot.photo?`<img class="ppic" src="${pot.photo}" alt="${escHtml(pot.name)}">`:POT_SVGS[pot.iconIdx||0]}<div class="pname">${escHtml(pot.name)}</div><div class="pw">${pot.weight}g</div><div class="pot-del" onclick="deletePot(event,${i})">✕</div>`;
+    item.addEventListener('click',()=>{if(!editingPots)selectPot(i);});
+    grid.appendChild(item);
+  });
+}
+
+function selectPot(i){selectedPotIdx=i;try{localStorage.setItem('pasta_pot_sel',i);}catch(e){}document.getElementById('pentola-input').value=pots[i].weight;renderPotsGrid();recalc();switchTab('calc');}
+function toggleEditPots(){editingPots=!editingPots;document.getElementById('edit-pots-btn').textContent=editingPots?'Fine':'Modifica';renderPotsGrid();}
+function deletePot(e,i){e.stopPropagation();if(selectedPotIdx===i){selectedPotIdx=null;try{localStorage.removeItem('pasta_pot_sel');}catch(e){}document.getElementById('pentola-input').value='';recalc();}pots.splice(i,1);if(selectedPotIdx!==null&&selectedPotIdx>=pots.length)selectedPotIdx=null;savePots();renderPotsGrid();}
+function savePots(){try{localStorage.setItem('pasta_pots',JSON.stringify(pots));}catch(e){}}
+
+function renderPotIcons(){
+  const grid=document.getElementById('pot-icons-grid');grid.innerHTML='';
+  POT_SVGS.forEach((svg,i)=>{
+    const d=document.createElement('div');d.className='picon-opt'+(selectedPotIconIdx===i?' sel':'');d.innerHTML=svg;
+    d.onclick=()=>{selectedPotIconIdx=i;potPhotoDataUrl=null;document.getElementById('pot-photo-preview').style.display='none';renderPotIcons();};
+    grid.appendChild(d);
+  });
+}
+
+function openAddPot(){potPhotoDataUrl=null;selectedPotIconIdx=0;document.getElementById('pot-name-input').value='';document.getElementById('pot-weight-input').value='';document.getElementById('pot-photo-preview').style.display='none';document.getElementById('pot-err').style.display='none';renderPotIcons();document.getElementById('add-pot-modal').classList.add('open');}
+function closeAddPot(){document.getElementById('add-pot-modal').classList.remove('open');}
+function handlePotPhoto(input){const file=input.files[0];if(!file)return;const reader=new FileReader();reader.onload=e=>{potPhotoDataUrl=e.target.result;const prev=document.getElementById('pot-photo-preview');prev.src=potPhotoDataUrl;prev.style.display='block';selectedPotIconIdx=-1;renderPotIcons();};reader.readAsDataURL(file);}
+function savePot(){
+  const name=document.getElementById('pot-name-input').value.trim();
+  const weight=parseFloat(document.getElementById('pot-weight-input').value);
+  const errEl=document.getElementById('pot-err');
+  if(!name||!weight||weight<=0){errEl.textContent=!name?'Inserisci un nome per la pentola.':'Inserisci un peso valido (es. 1250).';errEl.style.display='block';return;}
+  errEl.style.display='none';
+  pots.push({name,weight,iconIdx:selectedPotIconIdx>=0?selectedPotIconIdx:0,photo:potPhotoDataUrl||null});
+  savePots();renderPotsGrid();closeAddPot();
+}
+
+init();
+</script>
+</body>
+</html>
